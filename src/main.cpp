@@ -6,7 +6,7 @@ uv_tcp_t server;
 uv_loop_t *loop;
 
 void alloc_buffer(uv_handle_t *handle, size_t size, uv_buf_t *buf) {
-     buf->base = malloc(size);
+     buf->base = (char *)malloc(size);
      buf->len = size;
 }
 
@@ -30,7 +30,7 @@ void on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) {
 }
 
 void on_connection(uv_stream_t *server, int status) {
-     uv_tcp_t *client = malloc(sizeof(uv_tcp_t));
+     uv_tcp_t *client = (uv_tcp_t *)malloc(sizeof(uv_tcp_t));
 
      if (status == -1) {
 	  /* error */
