@@ -1,0 +1,2 @@
+let g:ale_cpp_gcc_options = '-std=c++17 -Wall -I/home/silvman/CLionProjects/hl_cpp/include'
+let g:ale_cpp_clang_options = '-std=c++17 -Wall -I/home/silvman/CLionProjects/hl_cpp/include'

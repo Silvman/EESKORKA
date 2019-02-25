@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.12)
 
 project(highload_silvman)
 
@@ -8,4 +8,4 @@ include_directories(include)
 link_directories(lib)
 
 add_executable(highload_silvman src/main.cpp)
-target_link_libraries(highload_silvman libuv.a pthread)
+target_link_libraries(highload_silvman pthread stdc++fs)
