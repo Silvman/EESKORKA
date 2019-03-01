@@ -1,16 +1,17 @@
-#include "spdlog/spdlog.h"
 #include "server/httpServer.h"
+#include "logger/serverLogger.h"
+
+typedef eeskorka::serverLogger loge;
 
 int main() {
-    spdlog::set_pattern("[%H:%M:%S %z] [%^%l%$] [thread %t] %v");
-    spdlog::set_level(spdlog::level::debug);
+    loge& log = eeskorka::serverLogger::get();
 
-    // config reading
+    // todo config reading
     eeskorka::serverConfig config;
 
     eeskorka::httpServer server(config);
     if (server.startStaticServer() == -1) {
-        spdlog::critical("cannot start server");
+        log.log(eeskorka::critical, "cannot start server");
     }
 
     return 0;

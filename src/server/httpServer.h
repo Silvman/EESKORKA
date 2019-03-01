@@ -45,12 +45,14 @@ namespace eeskorka {
         server basicServer;
         serverConfig config;
 
+        serverLogger& logger;
+
         bool isHeaderOver(const std::string &s);
 
         int writeCompletely(int fd, const char *buffer, size_t size);
 
     public:
-        explicit httpServer(const serverConfig &config) : config(config), basicServer(config) {}
+        explicit httpServer(const serverConfig &config) : config(config), basicServer(config), logger(serverLogger::get()) {}
 
         int startStaticServer();
         int onClientReady(int sd);

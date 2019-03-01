@@ -33,8 +33,8 @@ void eeskorka::HTTPMessage::parseRawHeader(const std::string &raw) {
     }
 
 #ifdef DEBUG
-    spdlog::debug("HTTP headers parsing done");
-        spdlog::debug("Method: {}, "
+    serverLogger::get().log(debug, "HTTP headers parsing done");
+    serverLogger::get().log(debug, "Method: {}, "
                       "Request-URI: {}, "
                       "HTTP-Version: {}",
                       requestLine.method,
@@ -42,7 +42,7 @@ void eeskorka::HTTPMessage::parseRawHeader(const std::string &raw) {
                       requestLine.http_version);
 
         std::for_each(headers.begin(), headers.end(),
-                      [](auto pair) { spdlog::debug("{}: {}", pair.first, pair.second); });
+                      [](auto pair) { serverLogger::get().log(debug, "{}: {}", pair.first, pair.second); });
 #endif
 
 }
@@ -58,7 +58,7 @@ int eeskorka::httpServer::writeCompletely(int fd, const char *buffer, size_t siz
         nn = write(fd, buffer, size);
         if (nn == -1) {
             if (errno == EWOULDBLOCK || errno == EAGAIN) {
-                spdlog::debug("writeCompletely: EAGAIN");
+                logger.log(debug, "writeCompletely: EAGAIN");
                 return 0;
             }
 
@@ -85,7 +85,7 @@ int eeskorka::httpServer::onClientReady(int sd) {
 
     loop {
         ssize_t n = read(sd, buffer, config.bufferSize);
-        spdlog::debug("n: {}", n);
+        logger.log(debug, "n: {}", n);
 
         if (n > 0) {
             rawMessage.append(buffer, n);
@@ -93,23 +93,23 @@ int eeskorka::httpServer::onClientReady(int sd) {
             if (n == -1) {
                 // прочитали сообщение
                 if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                    spdlog::debug("read message, errno eagain");
+                    logger.log(debug, "read message, errno eagain");
                     break;
                 } else {
-                    spdlog::critical("read message, errno: {}", strerror(errno));
+                    logger.log(critical, "read message, errno: {}", strerror(errno));
                     return -1;
                 }
             } else {
-                spdlog::debug("n=0, disconnect");
+                logger.log(debug, "n=0, disconnect");
                 return 0;
             }
         }
     };
 
     if (isHeaderOver(rawMessage)) {
-        spdlog::info("header is read");
+        logger.log(info, "header is read");
     } else {
-        spdlog::warn("header is broken");
+        logger.log(warn, "header is broken");
         return 0;
     }
 
@@ -119,7 +119,7 @@ int eeskorka::httpServer::onClientReady(int sd) {
     fs::path p = "." + httpMessage.requestLine.request_uri;
 
     if (fs::exists(p)) {
-        spdlog::debug("file exists");
+        logger.log(debug, "file exists");
 
         auto sizeLeft = fs::file_size(p);
 
@@ -128,7 +128,7 @@ int eeskorka::httpServer::onClientReady(int sd) {
         responseHeader += "\r\n";
 
         if (writeCompletely(sd, responseHeader.c_str(), responseHeader.length()) == -1) {
-            spdlog::debug("writecompletely fail");
+            logger.log(debug, "writecompletely fail");
             return 0;
         }
 
@@ -147,12 +147,12 @@ int eeskorka::httpServer::onClientReady(int sd) {
             }
 
             if (err != 0) {
-                spdlog::critical("writecompletely fail");
+                logger.log(critical, "writecompletely fail");
                 break;
             }
         }
     } else {
-        spdlog::debug("file not exists");
+        logger.log(debug, "file not exists");
         responseHeader += fmt::format("{} 404 Not Found\r\n", httpMessage.requestLine.http_version);
         responseHeader += fmt::format("Content-Length: 0\r\n");
         responseHeader += fmt::format("Connection: close\r\n\r\n");

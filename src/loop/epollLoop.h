@@ -11,8 +11,8 @@
 #include <utility>
 #include <sys/epoll.h>
 #include <netinet/in.h>
-#include "spdlog/spdlog.h"
 #include "../server/serverConfig.h"
+#include "../logger/serverLogger.h"
 
 #define loop for(;;)
 
@@ -27,7 +27,7 @@ namespace eeskorka {
         virtual ~epollLoop();
 
         void setClientCallback(std::function<int(int)> callback);
-        int init(int sd);
+        int init(int sd_list);
         std::function<void()> getEventLoop();
 
     private:
@@ -40,6 +40,8 @@ namespace eeskorka {
 
         std::string IPAddressToString(int ip);
         int acceptClients();
+
+        serverLogger& logger;
     };
 }
 
