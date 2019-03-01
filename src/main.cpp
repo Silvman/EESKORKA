@@ -1,19 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/epoll.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#include <iostream>
-#include <algorithm>
-#include <thread>
-#include <csignal>
-#include <sstream>
 #include "spdlog/spdlog.h"
 #include "server/httpServer.h"
-#include <filesystem>
-#include <fstream>
-#include <netinet/in.h>
-
 
 int main() {
     spdlog::set_pattern("[%H:%M:%S %z] [%^%l%$] [thread %t] %v");
