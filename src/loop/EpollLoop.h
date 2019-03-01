@@ -11,8 +11,8 @@
 #include <utility>
 #include <sys/epoll.h>
 #include <netinet/in.h>
-#include "../server/serverConfig.h"
-#include "../logger/serverLogger.h"
+#include "../server/ServerConfig.h"
+#include "../logger/ServerLogger.h"
 
 #define loop for(;;)
 
@@ -41,7 +41,7 @@ namespace eeskorka {
         std::string IPAddressToString(int ip);
         int acceptClients();
 
-        serverLogger& logger;
+        ServerLogger& logger;
     };
 }
 

@@ -2,9 +2,9 @@
 // Created by silvman on 3/1/19.
 //
 
-#include "epollLoop.h"
+#include "EpollLoop.h"
 
-eeskorka::epollLoop::epollLoop(const eeskorka::serverConfig &config) : config(config), epfd(0), sd(0), logger(serverLogger::get()) {}
+eeskorka::epollLoop::epollLoop(const eeskorka::serverConfig &config) : config(config), epfd(0), sd(0), logger(ServerLogger::get()) {}
 
 eeskorka::epollLoop::~epollLoop() {
     if (epfd > 0) {

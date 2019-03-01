@@ -18,7 +18,7 @@ namespace eeskorka {
         debug
     };
 
-    class serverLogger {
+    class ServerLogger {
     public:
         template<typename... Args, typename T>
         void log(logLevel l, T str, const Args &... args) {
@@ -50,16 +50,16 @@ namespace eeskorka {
             }
         }
 
-        static serverLogger &get() {
-            static serverLogger S;
+        static ServerLogger &get() {
+            static ServerLogger S;
             return S;
         }
 
-        serverLogger(serverLogger const &) = delete;
-        void operator=(serverLogger const &) = delete;
+        ServerLogger(ServerLogger const &) = delete;
+        void operator=(ServerLogger const &) = delete;
 
     private:
-        serverLogger() {
+        ServerLogger() {
             auto sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
             spdlog::init_thread_pool(8192, 1);
             console = std::make_shared<spdlog::async_logger>("as", sink, spdlog::thread_pool(), spdlog::async_overflow_policy::block);

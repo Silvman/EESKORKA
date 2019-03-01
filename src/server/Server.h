@@ -10,9 +10,9 @@
 #include <thread>
 #include <vector>
 #include <functional>
-#include "serverConfig.h"
-#include "../loop/epollLoop.h"
-#include "../logger/serverLogger.h"
+#include "ServerConfig.h"
+#include "../loop/EpollLoop.h"
+#include "../logger/ServerLogger.h"
 #include <sys/socket.h>
 #include <unistd.h>
 #include <netinet/in.h>
@@ -44,7 +44,7 @@ namespace eeskorka {
 
         int createListeningSocket();
 
-        serverLogger& logger;
+        ServerLogger& logger;
 
     public:
         explicit server(const eeskorka::serverConfig &config);

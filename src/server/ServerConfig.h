@@ -16,15 +16,15 @@ namespace eeskorka {
         int port;
         int maxClients;
         size_t bufferSize;
-//        std::string addres;
-//        fs::path rootDir;
+        std::string rootDir;
 
         serverConfig() :
                 numCores(4),
                 numThreads(256),
                 port(5000),
                 maxClients(1024),
-                bufferSize(1024) { }
+                bufferSize(1024),
+                rootDir(".") { }
     };
 }
 

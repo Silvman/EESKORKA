@@ -2,9 +2,9 @@
 // Created by silvman on 3/1/19.
 //
 
-#include "server.h"
+#include "Server.h"
 
-eeskorka::server::server(const eeskorka::serverConfig &config) : config(config), multiplexer(config), sd(0), logger(serverLogger::get()) {
+eeskorka::server::server(const eeskorka::serverConfig &config) : config(config), multiplexer(config), sd(0), logger(ServerLogger::get()) {
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = htonl(INADDR_ANY); // todo address
     serv_addr.sin_port = htons(config.port);

@@ -1,10 +1,10 @@
-#include "server/httpServer.h"
-#include "logger/serverLogger.h"
+#include "server/HTTPServer.h"
+#include "logger/ServerLogger.h"
 
-typedef eeskorka::serverLogger loge;
+typedef eeskorka::ServerLogger loge;
 
 int main() {
-    loge& log = eeskorka::serverLogger::get();
+    loge& log = eeskorka::ServerLogger::get();
 
     // todo config reading
     eeskorka::serverConfig config;
