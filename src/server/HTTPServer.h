@@ -37,7 +37,7 @@ namespace eeskorka {
         explicit httpServer(const serverConfig &config) : config(config), basicServer(config), logger(ServerLogger::get()) {}
 
         int startStaticServer();
-        int onClientReady(int sd);
+        int onClientReady(int sd, loopCallbackType& loopCallback);
 
     };
 

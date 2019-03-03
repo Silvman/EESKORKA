@@ -13,41 +13,42 @@ bool eeskorka::httpServer::isHeaderOver(const std::string &s) {
 }
 
 int eeskorka::httpServer::startStaticServer() {
-    basicServer.setClientCallback(std::bind(&httpServer::onClientReady, this, std::placeholders::_1));
+    basicServer.setClientCallback(std::bind(&httpServer::onClientReady, this, std::placeholders::_1,
+                                            std::placeholders::_2));
     int err = basicServer.start();
     return err;
 }
 
-int eeskorka::httpServer::onClientReady(int sd) {
+int eeskorka::httpServer::onClientReady(int sd, loopCallbackType &loopCallback) {
     HTTPRequest httpRequest;
     std::string rawMessage;
 
-    if (readFromSocket(sd, rawMessage) != 0) {
-        return 0; // bad condition
+    if (readFromSocket(sd, rawMessage) == 0) {
+        if (isHeaderOver(rawMessage)) {
+            logger.log(info, "header is read");
+
+            httpRequest.parseRawHeader(rawMessage);
+
+            HTTPResponse httpResponse;
+            httpResponse.statusLine.http_version = httpRequest.requestLine.http_version;
+
+            // responsibility is going to context
+            HTTPContext httpContext(sd, httpRequest, httpResponse, config, loopCallback);
+
+            // there should be dispatch...
+            try {
+                handleStatic(httpContext);
+            } catch (const std::exception &e) {
+                logger.log(err, e.what());
+            }
+
+            return 0;
+        } else {
+            logger.log(warn, "header is broken");
+        }
     }
 
-    if (isHeaderOver(rawMessage)) {
-        logger.log(info, "header is read");
-    } else {
-        logger.log(warn, "header is broken");
-        return 0;
-    }
-
-    httpRequest.parseRawHeader(rawMessage);
-
-    HTTPResponse httpResponse;
-    httpResponse.statusLine.http_version = httpRequest.requestLine.http_version;
-
-    HTTPContext httpContext(sd, httpRequest, httpResponse, config);
-
-    // there should be dispatch...
-    // responsibility is going to context
-    try {
-        handleStatic(httpContext);
-    } catch (const std::exception& e) {
-        logger.log(err, e.what());
-    }
-
+    loopCallback(sd, closeConnection);
     return 0;
 }
 

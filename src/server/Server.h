@@ -1,5 +1,3 @@
-#include <utility>
-
 //
 // Created by silvman on 3/1/19.
 //
@@ -15,6 +13,7 @@
 #include "../logger/ServerLogger.h"
 #include <sys/socket.h>
 #include <unistd.h>
+#include <utility>
 #include <netinet/in.h>
 
 namespace eeskorka {
@@ -50,7 +49,7 @@ namespace eeskorka {
         explicit server(const eeskorka::serverConfig &config);
         virtual ~server();
 
-        void setClientCallback(std::function<int(int)> callback);
+        void setClientCallback(clientCallbackType callback);
         int start();
     };
 }

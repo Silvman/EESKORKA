@@ -22,7 +22,7 @@ eeskorka::server::~server() {
     }
 }
 
-void eeskorka::server::setClientCallback(std::function<int(int)> callback) {
+void eeskorka::server::setClientCallback(clientCallbackType callback) {
     multiplexer.setClientCallback(std::move(callback));
 }
 

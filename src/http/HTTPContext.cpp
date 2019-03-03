@@ -24,12 +24,14 @@ int eeskorka::HTTPContext::writeCompletely(const char *buffer, size_t size) {
     return 0;
 }
 
-eeskorka::HTTPContext::HTTPContext(int sd, eeskorka::HTTPRequest &req, eeskorka::HTTPResponse &resp, serverConfig &cfg)
+eeskorka::HTTPContext::HTTPContext(int sd, eeskorka::HTTPRequest &req, eeskorka::HTTPResponse &resp, serverConfig &cfg,
+                                   loopCallbackType& cb)
         : sd(sd),
           request(req),
           response(resp),
           logger(ServerLogger::get()),
-          config(cfg) { }
+          config(cfg),
+          loopCallback(cb) { }
 
 int eeskorka::HTTPContext::writeFile(const std::filesystem::path &p) {
     auto sizeLeft = fs::file_size(p);
@@ -67,4 +69,8 @@ int eeskorka::HTTPContext::writeHeader() {
 
 int eeskorka::HTTPContext::writeBody(const char *buffer, size_t size) {
     return writeCompletely(buffer, size);
+}
+
+void eeskorka::HTTPContext::close() {
+    loopCallback(sd, closeConnection);
 }

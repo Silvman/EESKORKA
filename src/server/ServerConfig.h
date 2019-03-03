@@ -21,7 +21,7 @@ namespace eeskorka {
         serverConfig() :
                 numCores(4),
                 numThreads(256),
-                port(5000),
+                port(80),
                 maxClients(1024),
                 bufferSize(1024),
                 rootDir(".") { }

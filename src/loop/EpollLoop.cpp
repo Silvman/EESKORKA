@@ -4,7 +4,38 @@
 
 #include "EpollLoop.h"
 
-eeskorka::epollLoop::epollLoop(const eeskorka::serverConfig &config) : config(config), epfd(0), sd(0), logger(ServerLogger::get()) {}
+eeskorka::epollLoop::epollLoop(const eeskorka::serverConfig &config) : config(config), epfd(0), sd(0),
+                                                                       logger(ServerLogger::get()) {
+    epollCallback = [&](int sd, connectionAction action) {
+        epoll_event ev {};
+        ev.data.fd = sd;
+
+        switch (action) {
+            case closeConnection: {
+                if (epoll_ctl(epfd, EPOLL_CTL_DEL, sd, &ev) == -1) {
+                    logger.log(err, "elentLoop, epoll_ctl, del: {}", strerror(errno));
+                }
+                close(sd);
+
+                break;
+            }
+
+            case rearmConnection: {
+                ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
+
+                if (epoll_ctl(epfd, EPOLL_CTL_MOD, sd, &ev) == -1) {
+                    logger.log(err, "elentLoop, epoll_ctl, mod: {}", strerror(errno));
+                }
+
+                break;
+            }
+
+            default: {
+                logger.log(warn, "unknown action");
+            }
+        }
+    };
+}
 
 eeskorka::epollLoop::~epollLoop() {
     if (epfd > 0) {
@@ -12,7 +43,7 @@ eeskorka::epollLoop::~epollLoop() {
     }
 }
 
-void eeskorka::epollLoop::setClientCallback(std::function<int(int)> callback) {
+void eeskorka::epollLoop::setClientCallback(clientCallbackType callback) {
     clientCallback = std::move(callback);
 }
 
@@ -70,7 +101,7 @@ int eeskorka::epollLoop::acceptClients() {
             };
 
             logger.log(info, "new client: sd {}, from {}", cli_sd,
-                         IPAddressToString(client.sin_addr.s_addr));
+                       IPAddressToString(client.sin_addr.s_addr));
 
         } else if (cli_sd == -1) {
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
@@ -90,7 +121,7 @@ int eeskorka::epollLoop::acceptClients() {
 }
 
 std::function<void()> eeskorka::epollLoop::getEventLoop() {
-    return [=]() {
+    return [&]() {
         auto *events = new epoll_event[config.maxClients];
 
         loop {
@@ -103,13 +134,7 @@ std::function<void()> eeskorka::epollLoop::getEventLoop() {
                         goto failure;
                     }
                 } else if (events[i].events & EPOLLIN) {
-                    if (clientCallback(events[i].data.fd) == 0) {
-                        // todo rearming socket for http/1.1
-                        if (epoll_ctl(epfd, EPOLL_CTL_DEL, events[i].data.fd, &events[i]) == -1) {
-                            logger.log(warn, "elentLoop, epoll_ctl, del: {}", strerror(errno));
-                        }
-                        close(events[i].data.fd);
-                    } else {
+                    if (clientCallback(events[i].data.fd, epollCallback) != 0) {
                         logger.log(critical, "failure on serving clients");
                         goto failure;
                     }

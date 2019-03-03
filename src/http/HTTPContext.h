@@ -9,6 +9,7 @@
 #include "../http/HTTPResponse.h"
 #include "../logger/ServerLogger.h"
 #include "../server/ServerConfig.h"
+#include "../types.h"
 #include <filesystem>
 #include <fstream>
 
@@ -17,7 +18,7 @@ namespace eeskorka {
 
     class HTTPContext {
     public:
-        HTTPContext(int sd, HTTPRequest &req, HTTPResponse &resp, serverConfig &cfg);
+        HTTPContext(int sd, HTTPRequest &req, HTTPResponse &resp, serverConfig &cfg, loopCallbackType& cb);
 
         HTTPRequest &request;
         HTTPResponse &response;
@@ -27,10 +28,13 @@ namespace eeskorka {
         int writeFile(const fs::path &p);
         int writeBody(const char *buffer, size_t size);
 
+        void close();
+
     private:
         int sd;
         int writeCompletely(const char *buffer, size_t size);
 
+        loopCallbackType& loopCallback;
         ServerLogger &logger;
     };
 }

@@ -16,32 +16,48 @@ void eeskorka::handleStatic(eeskorka::HTTPContext &ctx) {
         }
 
         fs::path p;
+        bool subdir = false;
         if (encodedURI[encodedURI.length() - 1] != '/') {
             // no subdir
             p = ctx.config.rootDir + encodedURI;
         } else {
             // subdir
+            subdir = true;
             p = ctx.config.rootDir + encodedURI + "index.html";
         }
 
-        if (fs::exists(p)) {
-            ServerLogger::get().log(info, "File exists");
+        if (p.string().find("/..") == std::string::npos) {
+            if (fs::exists(p)) {
+                ServerLogger::get().log(info, "File exists");
 
-            auto sizeLeft = fs::file_size(p);
-            ctx.response.headers["Content-Length"] = fmt::format("{}", sizeLeft);
-            ctx.response.statusLine.reason_phrase = "OK";
-            ctx.response.statusLine.status_code = 200;
+                auto sizeLeft = fs::file_size(p);
+                ctx.response.headers["Content-Length"] = fmt::format("{}", sizeLeft);
+                ctx.response.headers["Content-Type"] = utility::getContentType(p);
+                ctx.response.statusLine.reason_phrase = "OK";
+                ctx.response.statusLine.status_code = 200;
 
-            ctx.writeHeader();
+                ctx.writeHeader();
 
-            if (ctx.request.requestLine.method == "HEAD")
-                return;
+                if (ctx.request.requestLine.method != "HEAD") {
+                    ctx.writeFile(p);
+                }
+            } else if (subdir) {
+                ServerLogger::get().log(info, "403");
+                ctx.response.statusLine.reason_phrase = "Forbidden";
+                ctx.response.statusLine.status_code = 403;
 
-            ctx.writeFile(p);
+                ctx.writeHeader();
+            } else {
+                ServerLogger::get().log(info, "File not exists");
+                ctx.response.statusLine.reason_phrase = "Not Found";
+                ctx.response.statusLine.status_code = 404;
+
+                ctx.writeHeader();
+            }
         } else {
-            ServerLogger::get().log(info, "File not exists");
-            ctx.response.statusLine.reason_phrase = "Not Found";
-            ctx.response.statusLine.status_code = 404;
+            ServerLogger::get().log(info, "400");
+            ctx.response.statusLine.reason_phrase = "Bad Request";
+            ctx.response.statusLine.status_code = 400;
 
             ctx.writeHeader();
         }
@@ -52,5 +68,5 @@ void eeskorka::handleStatic(eeskorka::HTTPContext &ctx) {
         ctx.writeHeader();
     }
 
-
+    ctx.close();
 }

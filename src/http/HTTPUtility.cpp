@@ -3,6 +3,7 @@
 //
 
 #include <string>
+#include <unordered_map>
 #include "HTTPUtility.h"
 
 std::string eeskorka::utility::URLDecode(const std::string &uri) {
@@ -36,4 +37,26 @@ std::string eeskorka::utility::RFC1123Time(time_t time) {
     strftime(buffer, 80, "%a, %d %b %Y %H:%M:%S GMT", timeinfo);
 
     return buffer;
+}
+
+
+std::string eeskorka::utility::getContentType(const fs::path &path) {
+    static std::unordered_map<std::string, std::string> mime = {
+            {".html", "text/html"},
+            {".css",  "text/css"},
+            {".js",   "text/javascript"},
+            {".jpg",  "image/jpeg"},
+            {".jpeg", "image/jpeg"},
+            {".png",  "image/png"},
+            {".gif",  "image/gif"},
+            {".swf",  "application/x-shockwave-flash"}
+    };
+
+    std::string ext = path.extension();
+
+    if (mime.find(ext) != mime.end()) {
+        return mime[ext];
+    }
+
+    return "text/plain";
 }
