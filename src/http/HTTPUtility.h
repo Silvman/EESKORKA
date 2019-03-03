@@ -7,6 +7,11 @@
 
 #include <string>
 #include <filesystem>
+#include <regex>
+#include <fstream>
+#include "../server/ServerConfig.h"
+#include "../logger/ServerLogger.h"
+
 
 namespace eeskorka {
     namespace fs = std::filesystem;
@@ -14,10 +19,12 @@ namespace eeskorka {
     namespace utility {
 
         std::string URLDecode(const std::string &uri);
+        std::string URLEncode(const std::string &uri);
 
         std::string RFC1123Time(time_t time);
+        std::string getContentType(const fs::path &path);
 
-        std::string getContentType(const fs::path& path);
+        serverConfig readConfig(const fs::path &path);
 
     }
 

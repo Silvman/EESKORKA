@@ -11,20 +11,16 @@ namespace eeskorka {
     namespace fs = std::filesystem;
 
     struct serverConfig {
-        int numCores;
-        int numThreads;
-        int port;
-        int maxClients;
-        size_t bufferSize;
-        std::string rootDir;
+        int numCores {4};
+        int numThreads {256};
+        int port {80};
+        int maxClients {1024};
+        size_t bufferSize {1024};
+        std::string rootDir {"."};
 
-        serverConfig() :
-                numCores(4),
-                numThreads(256),
-                port(80),
-                maxClients(1024),
-                bufferSize(1024),
-                rootDir(".") { }
+        serverConfig() = default;
+        explicit serverConfig(const fs::path& p);
+
     };
 }
 

@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.12)
 project(eeskorka)
 
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_FLAGS_RELEASE "-O2")
 
 include_directories(vendor/spdlog/include)
 

@@ -4,6 +4,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <iomanip>
 #include "HTTPUtility.h"
 
 std::string eeskorka::utility::URLDecode(const std::string &uri) {
@@ -59,4 +60,116 @@ std::string eeskorka::utility::getContentType(const fs::path &path) {
     }
 
     return "text/plain";
+}
+
+eeskorka::serverConfig eeskorka::utility::readConfig(const std::filesystem::path &path) {
+    serverConfig config;
+
+    std::ifstream f(path);
+    std::string buf;
+    std::regex re("([^ \t\r\n\v\f]+[A-Za-z0-9!\"#$%&'()*+,./:;<=>?@\\^_`{|}~-]*)");
+
+    while (!f.eof()) {
+        std::getline(f, buf);
+
+        auto commentIt = std::find(buf.begin(), buf.end(), '#');
+
+        for (std::sregex_token_iterator i{buf.begin(), commentIt, re, 0}, end; i != end; ++i) {
+            std::string token{*i};
+
+            if (token == "cpu_limit") {
+                ++i;
+                config.numCores = std::atoi((*i).str().c_str());
+
+                if (config.numCores < 1) {
+                    throw std::runtime_error(
+                            fmt::format("config parse failed: cpu_limit == {} (must be at least 1)", config.numCores));
+                }
+
+                break;
+            }
+
+            if (token == "thread_limit") {
+                ++i;
+                config.numThreads = std::atoi((*i).str().c_str());
+
+                if (config.numCores < 1) {
+                    throw std::runtime_error(
+                            fmt::format("config parse failed: thread_limit == {} (must be at least 1)",
+                                        config.numCores));
+                }
+
+                break;
+            }
+
+            if (token == "document_root") {
+                ++i;
+                config.rootDir = (*i).str();
+
+                if (!fs::exists(config.rootDir)) {
+                    throw std::runtime_error(
+                            fmt::format("config parse failed: {} does not exists", config.rootDir));
+                }
+
+                if (!fs::is_directory(config.rootDir)) {
+                    throw std::runtime_error(
+                            fmt::format("config parse failed: {} is not a directory", config.rootDir));
+                }
+
+                break;
+            }
+
+            if (token == "buffer_size") {
+                ++i;
+                config.bufferSize = static_cast<size_t>(std::atoi((*i).str().c_str()));
+
+                if (config.bufferSize < 32) {
+                    throw std::runtime_error(
+                            fmt::format("config parse failed: buffer_size must be greater than 32"));
+                }
+            }
+
+            if (token == "port") {
+                ++i;
+                config.port = std::atoi((*i).str().c_str());
+
+                if (config.port < 0 || config.port >= 65536) {
+                    throw std::runtime_error(
+                            fmt::format("config parse failed: port must be 0 <= {} < 65536", config.port));
+                }
+            }
+
+            if (token == "max_clients") {
+                ++i;
+                config.maxClients = std::atoi((*i).str().c_str());
+
+                if (config.maxClients < config.numCores) {
+                    throw std::runtime_error(
+                            fmt::format(
+                                    "config parse failed: max_clients ({}) must be greather "
+                                    "or equeal to max_cores ({})",
+                                    config.maxClients, config.numCores));
+                }
+            }
+        }
+    }
+
+    return config;
+}
+
+std::string eeskorka::utility::URLEncode(const std::string &uri) {
+    std::string enc;
+    char bufHex[10];
+
+    for (const auto &rune : uri) {
+        if (rune == ' ') {
+            enc += '+';
+        } else if (isalnum(rune) || rune == '-' || rune == '_' || rune == '.' || rune == '~' || rune == '/')  {
+            enc += rune;
+        } else {
+            enc += fmt::format("%{:02X}", rune);
+        }
+    }
+
+    return enc;
 }

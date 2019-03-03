@@ -7,23 +7,33 @@
 
 void eeskorka::handleStatic(eeskorka::HTTPContext &ctx) {
     if (ctx.request.requestLine.method == "GET" || ctx.request.requestLine.method == "HEAD") {
-        std::string encodedURI;
+        std::string decodedURL;
         auto pos = ctx.request.requestLine.request_uri.find('?');
         if (pos == std::string::npos) {
-            encodedURI = utility::URLDecode(ctx.request.requestLine.request_uri);
+            decodedURL = utility::URLDecode(ctx.request.requestLine.request_uri);
         } else {
-            encodedURI = utility::URLDecode(ctx.request.requestLine.request_uri.substr(0, pos));
+            decodedURL = utility::URLDecode(ctx.request.requestLine.request_uri.substr(0, pos));
         }
 
         fs::path p;
         bool subdir = false;
-        if (encodedURI[encodedURI.length() - 1] != '/') {
+        if (decodedURL[decodedURL.length() - 1] != '/') {
+            if (fs::is_directory(ctx.config.rootDir + decodedURL)) {
+                ctx.response.statusLine.reason_phrase = "Moved Permanently";
+                ctx.response.headers["Location"] = utility::URLEncode(decodedURL + '/');
+                ctx.response.statusLine.status_code = 301;
+
+                ctx.writeHeader();
+                ctx.close();
+                return;
+            }
+
             // no subdir
-            p = ctx.config.rootDir + encodedURI;
+            p = ctx.config.rootDir + decodedURL;
         } else {
             // subdir
             subdir = true;
-            p = ctx.config.rootDir + encodedURI + "index.html";
+            p = ctx.config.rootDir + decodedURL + "index.html";
         }
 
         if (p.string().find("/..") == std::string::npos) {

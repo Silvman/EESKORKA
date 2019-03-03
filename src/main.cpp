@@ -1,17 +1,13 @@
 #include "server/HTTPServer.h"
 #include "logger/ServerLogger.h"
-
-typedef eeskorka::ServerLogger loge;
+#include "http/HTTPUtility.h"
 
 int main() {
-    loge& log = eeskorka::ServerLogger::get();
-
-    // todo config reading
-    eeskorka::serverConfig config;
-
+    eeskorka::serverConfig config("../config.conf");
     eeskorka::httpServer server(config);
     if (server.startStaticServer() == -1) {
-        log.log(eeskorka::critical, "cannot start server");
+        spdlog::critical("cannot start server");
+        return 1;
     }
 
     return 0;
