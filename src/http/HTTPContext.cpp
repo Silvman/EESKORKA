@@ -5,15 +5,11 @@
 #include "HTTPContext.h"
 
 int eeskorka::HTTPContext::writeCompletely(const char *buffer, size_t size) {
-    ssize_t written = 0, nn = 0;
-
     while (written != size) {
         nn = write(sd, buffer, size);
         if (nn == -1) {
             if (errno == EWOULDBLOCK || errno == EAGAIN) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(50));
-		logger.log(debug, "writeCompletely: EAGAIN");
-                continue;
+                return -2;
             }
 
             return -1;
@@ -25,42 +21,56 @@ int eeskorka::HTTPContext::writeCompletely(const char *buffer, size_t size) {
     return 0;
 }
 
-eeskorka::HTTPContext::HTTPContext(int sd, eeskorka::HTTPRequest &req, eeskorka::HTTPResponse &resp, serverConfig &cfg,
-                                   loopCallbackType& cb)
+eeskorka::HTTPContext::HTTPContext(int sd, serverConfig &cfg,
+                                   loopCallbackType &cb)
         : sd(sd),
-          request(req),
-          response(resp),
           logger(ServerLogger::get()),
           config(cfg),
-          loopCallback(cb) { }
+          loopCallback(cb),
+          unfinishedTask(false) {
+    buffer = new char[config.bufferSize];
+
+}
 
 int eeskorka::HTTPContext::writeFile(const std::filesystem::path &p) {
-    auto sizeLeft = fs::file_size(p);
-
-    char buffer[config.bufferSize]; // todo use config
-
-    std::ifstream fReader;
-    fReader.open(p);
+    if (!unfinishedTask) {
+        this->p = p;
+        sizeLeft = fs::file_size(p);
+        fReader.open(p);
+    }
 
     int err = 0;
     while (sizeLeft != 0) {
-        fReader.read(buffer, config.bufferSize);
-
-        if (sizeLeft >= config.bufferSize) {
-            err = writeCompletely(buffer, config.bufferSize);
-            sizeLeft -= config.bufferSize;
-        } else {
-            err = writeCompletely(buffer, sizeLeft);
-            sizeLeft = 0;
+        if (!unfinishedTask) {
+            fReader.read(buffer, config.bufferSize);
         }
 
-        if (err != 0) {
+        unfinishedTask = false;
+        if (sizeLeft >= config.bufferSize) {
+            err = writeCompletely(buffer, config.bufferSize);
+            if (err == -2) {
+                unfinishedTask = true;
+                return -2;
+            } else if (err > 0) {
+                sizeLeft -= config.bufferSize;
+            }
+        } else {
+            err = writeCompletely(buffer, sizeLeft);
+            if (err == -2) {
+                unfinishedTask = true;
+                return -2;
+            } else if (err > 0) {
+                sizeLeft = 0;
+            }
+        }
+
+        if (err == -1) {
             logger.log(critical, "writecompletely fail, errno {}", strerror(errno));
-            break;
+            return -1;
         }
     }
 
-    return -1;
+    return 0;
 }
 
 int eeskorka::HTTPContext::writeHeader() {
@@ -74,4 +84,25 @@ int eeskorka::HTTPContext::writeBody(const char *buffer, size_t size) {
 
 void eeskorka::HTTPContext::close() {
     loopCallback(sd, closeConnection);
+}
+
+bool eeskorka::HTTPContext::hasUnfinishedTask() {
+    return unfinishedTask;
+}
+
+eeskorka::HTTPContext::~HTTPContext() {
+    delete[] buffer;
+}
+
+eeskorka::HTTPContext::HTTPContext(eeskorka::HTTPContext &&c) noexcept : sd(c.sd), loopCallback(c.loopCallback),
+                                                                         logger(c.logger),
+                                                                         request(std::move(c.request)),
+                                                                         response(std::move(c.response)),
+                                                                         config(c.config) {}
+
+eeskorka::HTTPContext::HTTPContext() : config(serverConfig()), logger(ServerLogger::get()) {
+
+/*
+ * TODO shared ptrs
+ */
 }

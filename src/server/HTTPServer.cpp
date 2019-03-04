@@ -20,26 +20,39 @@ int eeskorka::httpServer::startStaticServer() {
 }
 
 int eeskorka::httpServer::onClientReady(int sd, loopCallbackType &loopCallback) {
-    HTTPRequest httpRequest;
+    if (clients.find(sd) != clients.end()) {
+        clients[sd].writeFile();
+
+        if (clients[sd].hasUnfinishedTask()) {
+            loopCallback(sd, rearmConnection);
+        } else {
+            loopCallback(sd, closeConnection);
+        }
+
+        return 0;
+    }
+
+    clients.emplace(sd, HTTPContext(sd, config, loopCallback));
+    HTTPContext& httpContext = clients[sd];
     std::string rawMessage;
 
     if (readFromSocket(sd, rawMessage) == 0) {
         if (isHeaderOver(rawMessage)) {
             logger.log(info, "header is read");
 
-            httpRequest.parseRawHeader(rawMessage);
+            httpContext.request.parseRawHeader(rawMessage);
+            httpContext.response.statusLine.http_version = httpContext.request.requestLine.http_version;
 
-            HTTPResponse httpResponse;
-            httpResponse.statusLine.http_version = httpRequest.requestLine.http_version;
-
-            // responsibility is going to context
-            HTTPContext httpContext(sd, httpRequest, httpResponse, config, loopCallback);
-
-            // there should be dispatch...
             try {
                 handleStatic(httpContext);
             } catch (const std::exception &e) {
                 logger.log(err, e.what());
+            }
+
+            if (!httpContext.hasUnfinishedTask()) {
+                clients.erase(sd);
+            } else {
+                loopCallback(sd, rearmConnection);
             }
 
             return 0;

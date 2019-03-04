@@ -78,5 +78,7 @@ void eeskorka::handleStatic(eeskorka::HTTPContext &ctx) {
         ctx.writeHeader();
     }
 
-    ctx.close();
+    if (!ctx.hasUnfinishedTask()) {
+        ctx.close();
+    }
 }

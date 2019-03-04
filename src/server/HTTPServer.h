@@ -33,6 +33,8 @@ namespace eeskorka {
         bool isHeaderOver(const std::string &s);
         int readFromSocket(int sd, std::string& raw);
 
+        std::unordered_map<int, HTTPContext> clients;
+
     public:
         explicit httpServer(const serverConfig &config) : config(config), basicServer(config), logger(ServerLogger::get()) {}
 
