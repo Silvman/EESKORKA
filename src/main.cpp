@@ -1,9 +1,14 @@
 #include "server/HTTPServer.h"
-#include "logger/ServerLogger.h"
-#include "http/HTTPUtility.h"
+#include "RuntimeArguments.h"
 
-int main() {
-    eeskorka::serverConfig config("../config.conf");
+int main(int argc, char** argv) {
+    RuntimeArguments arguments(argc, argv);
+
+    eeskorka::serverConfig config(arguments.configPath);
+    if (arguments.port != -1) {
+        config.port = arguments.port;
+    }
+
     eeskorka::httpServer server(config);
     if (server.startStaticServer() == -1) {
         spdlog::critical("cannot start server");
