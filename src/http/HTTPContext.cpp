@@ -11,8 +11,9 @@ int eeskorka::HTTPContext::writeCompletely(const char *buffer, size_t size) {
         nn = write(sd, buffer, size);
         if (nn == -1) {
             if (errno == EWOULDBLOCK || errno == EAGAIN) {
-                logger.log(debug, "writeCompletely: EAGAIN");
-                return 0;
+                std::this_thread::sleep_for(std::chrono::milliseconds(50));
+		logger.log(debug, "writeCompletely: EAGAIN");
+                continue;
             }
 
             return -1;
@@ -54,7 +55,7 @@ int eeskorka::HTTPContext::writeFile(const std::filesystem::path &p) {
         }
 
         if (err != 0) {
-            logger.log(critical, "writecompletely fail");
+            logger.log(critical, "writecompletely fail, errno {}", strerror(errno));
             break;
         }
     }
