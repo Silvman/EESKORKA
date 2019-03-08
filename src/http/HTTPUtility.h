@@ -17,7 +17,6 @@ namespace eeskorka {
     namespace fs = std::filesystem;
 
     namespace utility {
-
         std::string URLDecode(const std::string &uri);
         std::string URLEncode(const std::string &uri);
 

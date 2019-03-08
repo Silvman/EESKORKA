@@ -20,7 +20,7 @@ namespace eeskorka {
 
     class epollLoop {
     public:
-        explicit epollLoop(const serverConfig &config);
+        explicit epollLoop();
         virtual ~epollLoop();
 
         void setClientCallback(clientCallbackType callback);
@@ -30,7 +30,6 @@ namespace eeskorka {
     private:
         clientCallbackType clientCallback;
         loopCallbackType epollCallback;
-        serverConfig config;
 
         epoll_event listenEvent{};
         int epfd;
@@ -38,8 +37,6 @@ namespace eeskorka {
 
         std::string IPAddressToString(int ip);
         int acceptClients();
-
-        ServerLogger& logger;
     };
 }
 

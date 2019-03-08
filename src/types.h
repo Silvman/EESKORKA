@@ -10,6 +10,7 @@
 enum connectionAction {
     rearmConnection = 100,
     closeConnection,
+    waitUntillReaded,
 };
 
 typedef std::function<void(int, connectionAction)> loopCallbackType;

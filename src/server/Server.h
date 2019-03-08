@@ -34,7 +34,6 @@ namespace eeskorka {
 
     class server {
     private:
-        serverConfig config;
         std::vector<std::thread> loops;
         epollLoop multiplexer;
 
@@ -43,10 +42,8 @@ namespace eeskorka {
 
         int createListeningSocket();
 
-        ServerLogger& logger;
-
     public:
-        explicit server(const eeskorka::serverConfig &config);
+        server();
         virtual ~server();
 
         void setClientCallback(clientCallbackType callback);

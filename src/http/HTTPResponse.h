@@ -14,7 +14,7 @@
 namespace eeskorka {
     struct StatusLine {
         std::string http_version;
-        int status_code;
+        int status_code {200};
         std::string reason_phrase;
     };
 

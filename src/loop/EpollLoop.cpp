@@ -4,8 +4,7 @@
 
 #include "EpollLoop.h"
 
-eeskorka::epollLoop::epollLoop(const eeskorka::serverConfig &config) : config(config), epfd(0), sd(0),
-                                                                       logger(ServerLogger::get()) {
+eeskorka::epollLoop::epollLoop() : epfd(0), sd(0) {
     epollCallback = [&](int sd, connectionAction action) {
         epoll_event ev {};
         ev.data.fd = sd;
@@ -13,7 +12,7 @@ eeskorka::epollLoop::epollLoop(const eeskorka::serverConfig &config) : config(co
         switch (action) {
             case closeConnection: {
                 if (epoll_ctl(epfd, EPOLL_CTL_DEL, sd, &ev) == -1) {
-                    logger.log(err, "elentLoop, epoll_ctl, del: {}", strerror(errno));
+                    log(err, "elentLoop, epoll_ctl, del: {}", strerror(errno));
                 }
                 close(sd);
 
@@ -22,16 +21,24 @@ eeskorka::epollLoop::epollLoop(const eeskorka::serverConfig &config) : config(co
 
             case rearmConnection: {
                 ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
-
                 if (epoll_ctl(epfd, EPOLL_CTL_MOD, sd, &ev) == -1) {
-                    logger.log(err, "elentLoop, epoll_ctl, mod: {}", strerror(errno));
+                    log(err, "elentLoop, epoll_ctl, mod: {}", strerror(errno));
+                }
+
+                break;
+            }
+
+            case waitUntillReaded: {
+                ev.events = EPOLLOUT | EPOLLET | EPOLLONESHOT;
+                if (epoll_ctl(epfd, EPOLL_CTL_MOD, sd, &ev) == -1) {
+                    log(err, "elentLoop, epoll_ctl, mod: {}", strerror(errno));
                 }
 
                 break;
             }
 
             default: {
-                logger.log(warn, "unknown action");
+                log(warn, "unknown action");
             }
         }
     };
@@ -52,10 +59,10 @@ int eeskorka::epollLoop::init(int sd_list) {
 
     epfd = epoll_create(config.maxClients);
     if (epfd == -1) {
-        logger.log(critical, EPOLL_CREATE_ERR);
+        log(critical, EPOLL_CREATE_ERR);
         return -1;
     }
-    logger.log(info, "create epoll, epfd {}", epfd);
+    log(info, "create epoll, epfd {}", epfd);
 
     listenEvent.data.fd = sd;
     listenEvent.events = EPOLLIN | EPOLLEXCLUSIVE;
@@ -63,10 +70,10 @@ int eeskorka::epollLoop::init(int sd_list) {
     // on many connections and starvation when only one thread is processing all connections
 
     if (epoll_ctl(epfd, EPOLL_CTL_ADD, sd, &listenEvent) != 0) {
-        logger.log(critical, "epoll ctl failed");
+        log(critical, "epoll ctl failed");
         return -1;
     }
-    logger.log(info, "bind epoll to the socket");
+    log(info, "bind epoll to the socket");
 
     return 0;
 }
@@ -87,7 +94,7 @@ int eeskorka::epollLoop::acceptClients() {
         int cli_sd = accept(sd, (struct sockaddr *) &client, &cli_len);
         if (cli_sd > 0) {
             if (fcntl(cli_sd, F_SETFL, fcntl(cli_sd, F_GETFL, 0) | O_NONBLOCK) == -1) {
-                logger.log(critical, "failure on fcntl");
+                log(critical, "failure on fcntl");
                 return -1;
             }
 
@@ -97,22 +104,22 @@ int eeskorka::epollLoop::acceptClients() {
             // using Edge Triggered with EPOLLONESHOT to unblock epoll_wait only once;
 
             if (epoll_ctl(epfd, EPOLL_CTL_ADD, cli_sd, &cli_ev) == -1) {
-                logger.log(warn, "accpet, epoll_ctl: {}", strerror(errno));
+                log(warn, "accpet, epoll_ctl: {}", strerror(errno));
             };
 
-            logger.log(info, "new client: sd {}, from {}", cli_sd,
+            log(info, "new client: sd {}, from {}", cli_sd,
                        IPAddressToString(client.sin_addr.s_addr));
 
         } else if (cli_sd == -1) {
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                logger.log(debug, "done accept");
+                log(debug, "done accept");
                 break;
             }
 
-            logger.log(critical, "cli_sd == -1 && errno == {}", strerror(errno));
+            log(critical, "cli_sd == -1 && errno == {}", strerror(errno));
             return -1;
         } else {
-            logger.log(debug, "? cli_sd: {}", cli_sd);
+            log(debug, "? cli_sd: {}", cli_sd);
             return -1;
         }
     }
@@ -130,12 +137,19 @@ std::function<void()> eeskorka::epollLoop::getEventLoop() {
             for (int i = 0; i < numEvents; i++) {
                 if (events[i].data.fd == sd) {
                     if (acceptClients() != 0) {
-                        logger.log(critical, "failure on accept clients");
+                        log(critical, "failure on accept clients");
                         goto failure;
                     }
-                } else if (events[i].events & EPOLLIN) {
+                } else if (events[i].events & (EPOLLIN)) {
                     if (clientCallback(events[i].data.fd, epollCallback) != 0) {
-                        logger.log(critical, "failure on serving clients");
+                        log(critical, "failure on serving clients");
+                        goto failure;
+                    }
+                } else if (events[i].events & (EPOLLOUT)) {
+                    log(info, "epollout");
+
+                    if (clientCallback(events[i].data.fd, epollCallback) != 0) {
+                        log(critical, "failure on serving clients");
                         goto failure;
                     }
                 }

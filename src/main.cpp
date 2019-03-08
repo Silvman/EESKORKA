@@ -4,12 +4,12 @@
 int main(int argc, char** argv) {
     RuntimeArguments arguments(argc, argv);
 
-    eeskorka::serverConfig config(arguments.configPath);
+    eeskorka::config.readConfigFile(arguments.configPath);
     if (arguments.port != -1) {
-        config.port = arguments.port;
+        eeskorka::config.port = arguments.port;
     }
 
-    eeskorka::httpServer server(config);
+    eeskorka::httpServer server;
     if (server.startStaticServer() == -1) {
         spdlog::critical("cannot start server");
         return 1;

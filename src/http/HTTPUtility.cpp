@@ -63,6 +63,10 @@ std::string eeskorka::utility::getContentType(const fs::path &path) {
 }
 
 eeskorka::serverConfig eeskorka::utility::readConfig(const std::filesystem::path &path) {
+    if (!fs::exists(path)) {
+        throw std::runtime_error(fmt::format("file not exists: {}", path.string()));
+    }
+
     serverConfig config;
 
     std::ifstream f(path);

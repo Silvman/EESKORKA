@@ -26,18 +26,13 @@ namespace eeskorka {
     class httpServer {
     private:
         server basicServer;
-        serverConfig config;
-
-        ServerLogger& logger;
 
         bool isHeaderOver(const std::string &s);
         int readFromSocket(int sd, std::string& raw);
 
-        std::unordered_map<int, HTTPContext> clients;
+        std::unordered_map<int, std::shared_ptr<HTTPContext>> clients;
 
     public:
-        explicit httpServer(const serverConfig &config) : config(config), basicServer(config), logger(ServerLogger::get()) {}
-
         int startStaticServer();
         int onClientReady(int sd, loopCallbackType& loopCallback);
 

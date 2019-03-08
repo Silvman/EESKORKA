@@ -18,28 +18,21 @@ namespace eeskorka {
 
     class HTTPContext {
     public:
-        HTTPContext();
-        HTTPContext(int sd, serverConfig &cfg, loopCallbackType& cb);
+        explicit HTTPContext(int sd = -1);
         virtual ~HTTPContext();
-        HTTPContext(HTTPContext&& c) noexcept;
 
         HTTPRequest request;
         HTTPResponse response;
-        const serverConfig& config;
 
         int writeHeader();
         int writeFile(const fs::path &p);
-        int writeFile() {
-            return this->writeFile(p);
-        }
         int writeBody(const char *buffer, size_t size);
 
         bool hasUnfinishedTask();
-
-        void close();
+        void resumeTask();;
 
     private:
-        bool unfinishedTask;
+        int unfinishedTask;
         int sd;
         int writeCompletely(const char *buffer, size_t size);
 
@@ -48,10 +41,6 @@ namespace eeskorka {
         std::filesystem::path p;
         char *buffer;
         std::ifstream fReader;
-
-
-        loopCallbackType& loopCallback;
-        ServerLogger &logger;
     };
 }
 

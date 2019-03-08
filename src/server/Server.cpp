@@ -4,7 +4,7 @@
 
 #include "Server.h"
 
-eeskorka::server::server(const eeskorka::serverConfig &config) : config(config), multiplexer(config), sd(0), logger(ServerLogger::get()) {
+eeskorka::server::server() : sd(0) {
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = htonl(INADDR_ANY); // todo address
     serv_addr.sin_port = htons(config.port);
@@ -27,46 +27,46 @@ void eeskorka::server::setClientCallback(clientCallbackType callback) {
 }
 
 int eeskorka::server::createListeningSocket() {
-    logger.log(info, "server is starting");
+    log(info, "server is starting");
 
     // creating socket
     sd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (sd == -1) {
-        logger.log(critical, SOCK_CREATE_ERR);
+        log(critical, SOCK_CREATE_ERR);
         return 1;
     }
-    logger.log(info, "open socket, sd {}", sd);
+    log(info, "open socket, sd {}", sd);
 
     // set non-blocking
     if (fcntl(sd, F_SETFL, fcntl(sd, F_GETFL, 0) | O_NONBLOCK) == -1) {
-        logger.log(critical, "failure on fcntl");
+        log(critical, "failure on fcntl");
     }
 
     // binding
     if (bind(sd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) != 0) {
-        logger.log(critical, "bind failed");
+        log(critical, "bind failed");
         return 1;
     }
-    logger.log(info, "bind port {} to the socket", config.port);
+    log(info, "bind port {} to the socket", config.port);
 
     // set socket listening
     if (listen(sd, config.maxClients) != 0) {
-        logger.log(critical, "listen failed");
+        log(critical, "listen failed");
         return 1;
     }
-    logger.log(info, "start listening for new connections");
+    log(info, "start listening for new connections");
 
     return 0;
 }
 
 int eeskorka::server::start() {
     if (createListeningSocket() != 0) {
-        logger.log(critical, "createListeningSocket failed");
+        log(critical, "createListeningSocket failed");
         return 1;
     }
 
     if (multiplexer.init(sd) != 0) {
-        logger.log(critical, "multiplexer.init failed");
+        log(critical, "multiplexer.init failed");
         return 1;
     };
 

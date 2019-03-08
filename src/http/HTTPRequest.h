@@ -21,7 +21,6 @@ namespace eeskorka {
     struct HTTPRequest {
         RequestLine requestLine;
         std::unordered_map<std::string, std::string> headers;
-//    std::string body; //
 
         void parseRawHeader(const std::string &raw);
     };

@@ -21,7 +21,7 @@ namespace eeskorka {
     class ServerLogger {
     public:
         template<typename... Args, typename T>
-        void log(logLevel l, T str, const Args &... args) {
+        void operator()(logLevel l, T str, const Args &... args) {
             switch (l) {
                 case info: {
                     console->info(str, args...);
@@ -71,6 +71,7 @@ namespace eeskorka {
         std::shared_ptr<spdlog::logger> console;
     };
 
+    static ServerLogger& log = ServerLogger::get();
 }
 
 

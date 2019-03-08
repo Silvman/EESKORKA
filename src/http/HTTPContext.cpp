@@ -21,13 +21,8 @@ int eeskorka::HTTPContext::writeCompletely(const char *buffer, size_t size) {
     return 0;
 }
 
-eeskorka::HTTPContext::HTTPContext(int sd, serverConfig &cfg,
-                                   loopCallbackType &cb)
-        : sd(sd),
-          logger(ServerLogger::get()),
-          config(cfg),
-          loopCallback(cb),
-          unfinishedTask(false) {
+eeskorka::HTTPContext::HTTPContext(int sd)
+        : sd(sd), unfinishedTask(false) {
     buffer = new char[config.bufferSize];
 
 }
@@ -65,7 +60,7 @@ int eeskorka::HTTPContext::writeFile(const std::filesystem::path &p) {
         }
 
         if (err == -1) {
-            logger.log(critical, "writecompletely fail, errno {}", strerror(errno));
+            log(critical, "writecompletely fail, errno {}", strerror(errno));
             return -1;
         }
     }
@@ -82,27 +77,16 @@ int eeskorka::HTTPContext::writeBody(const char *buffer, size_t size) {
     return writeCompletely(buffer, size);
 }
 
-void eeskorka::HTTPContext::close() {
-    loopCallback(sd, closeConnection);
-}
-
 bool eeskorka::HTTPContext::hasUnfinishedTask() {
-    return unfinishedTask;
+    return unfinishedTask != 0;
 }
 
 eeskorka::HTTPContext::~HTTPContext() {
     delete[] buffer;
 }
 
-eeskorka::HTTPContext::HTTPContext(eeskorka::HTTPContext &&c) noexcept : sd(c.sd), loopCallback(c.loopCallback),
-                                                                         logger(c.logger),
-                                                                         request(std::move(c.request)),
-                                                                         response(std::move(c.response)),
-                                                                         config(c.config) {}
-
-eeskorka::HTTPContext::HTTPContext() : config(serverConfig()), logger(ServerLogger::get()) {
-
-/*
- * TODO shared ptrs
- */
+void eeskorka::HTTPContext::resumeTask() {
+    if (unfinishedTask == 1) {
+        writeFile(p);
+    }
 }
