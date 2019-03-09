@@ -10,7 +10,7 @@
 
 struct RuntimeArguments {
     int port {-1};
-    std::string configPath {"../httpd.conf"};
+    std::string configPath {"/etc/httpd.conf"};
 
     RuntimeArguments(int argc, char** argv);
 };

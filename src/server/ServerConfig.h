@@ -11,10 +11,10 @@ namespace eeskorka {
     namespace fs = std::filesystem;
 
     struct serverConfig {
-        int numCores {2};
+        int workers {2};
         int numThreads {256};
         int port {80};
-        int maxClients {1024};
+        int maxClients {256}; // per worker
         size_t bufferSize {1024};
         std::string rootDir {"."};
 
@@ -23,7 +23,7 @@ namespace eeskorka {
     };
 
 
-    static serverConfig config;
+    extern serverConfig config;
 }
 
 

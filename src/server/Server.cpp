@@ -6,17 +6,11 @@
 
 eeskorka::server::server() : sd(0) {
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY); // todo address
+    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     serv_addr.sin_port = htons(config.port);
 }
 
 eeskorka::server::~server() {
-    if (!loops.empty()) {
-        for (auto &thread : loops) {
-            thread.join();
-        }
-    }
-
     if (sd > 0) {
         close(sd);
     }
@@ -27,12 +21,10 @@ void eeskorka::server::setClientCallback(clientCallbackType callback) {
 }
 
 int eeskorka::server::createListeningSocket() {
-    log(info, "server is starting");
-
     // creating socket
     sd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (sd == -1) {
-        log(critical, SOCK_CREATE_ERR);
+        log(critical, "failed to create socket descriptor");
         return 1;
     }
     log(info, "open socket, sd {}", sd);
@@ -44,7 +36,7 @@ int eeskorka::server::createListeningSocket() {
 
     // binding
     if (bind(sd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) != 0) {
-        log(critical, "bind failed");
+        log(critical, "bind port {} failed", config.port);
         return 1;
     }
     log(info, "bind port {} to the socket", config.port);
@@ -70,11 +62,15 @@ int eeskorka::server::start() {
         return 1;
     };
 
-    for (int i = 0; i < config.numCores - 1; ++i) {
+    for (int i = 0; i < config.workers; ++i) {
         loops.emplace_back(multiplexer.getEventLoop());
     }
 
-    multiplexer.getEventLoop()();
+    if (!loops.empty()) {
+        for (auto &thread : loops) {
+            thread.join();
+        }
+    }
 
     return 0;
 }

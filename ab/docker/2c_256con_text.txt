@@ -1,0 +1,43 @@
+This is ApacheBench, Version 2.3 <$Revision: 1843412 $>
+Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+Licensed to The Apache Software Foundation, http://www.apache.org/
+
+Benchmarking localhost (be patient)
+
+
+Server Software:        EESKORKA
+Server Hostname:        localhost
+Server Port:            8080
+
+Document Path:          /httptest/text..html
+Document Length:        0 bytes
+
+Concurrency Level:      1000
+Time taken for tests:   4.676 seconds
+Complete requests:      30000
+Failed requests:        0
+Non-2xx responses:      30000
+Total transferred:      3750000 bytes
+HTML transferred:       0 bytes
+Requests per second:    6416.04 [#/sec] (mean)
+Time per request:       155.859 [ms] (mean)
+Time per request:       0.156 [ms] (mean, across all concurrent requests)
+Transfer rate:          783.21 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:        0   69 311.5      1    3188
+Processing:     1   43  88.6     32    1075
+Waiting:        1   42  88.6     31    1074
+Total:          2  112 326.7     35    3459
+
+Percentage of the requests served within a certain time (ms)
+  50%     35
+  66%     44
+  75%     50
+  80%     56
+  90%     80
+  95%   1031
+  98%   1060
+  99%   1074
+ 100%   3459 (longest request)

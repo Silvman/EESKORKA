@@ -31,8 +31,12 @@ namespace eeskorka {
         int readFromSocket(int sd, std::string& raw);
 
         std::unordered_map<int, std::shared_ptr<HTTPContext>> clients;
+        std::mutex mtx;
 
     public:
+        httpServer();
+        virtual ~httpServer();
+
         int startStaticServer();
         int onClientReady(int sd, loopCallbackType& loopCallback);
 

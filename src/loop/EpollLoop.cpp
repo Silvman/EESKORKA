@@ -6,13 +6,13 @@
 
 eeskorka::epollLoop::epollLoop() : epfd(0), sd(0) {
     epollCallback = [&](int sd, connectionAction action) {
-        epoll_event ev {};
+        epoll_event ev{};
         ev.data.fd = sd;
 
         switch (action) {
             case closeConnection: {
                 if (epoll_ctl(epfd, EPOLL_CTL_DEL, sd, &ev) == -1) {
-                    log(err, "elentLoop, epoll_ctl, del: {}", strerror(errno));
+                    log(err, "epollCallback, epoll_ctl, close,  DEL: {}", strerror(errno));
                 }
                 close(sd);
 
@@ -22,7 +22,7 @@ eeskorka::epollLoop::epollLoop() : epfd(0), sd(0) {
             case rearmConnection: {
                 ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
                 if (epoll_ctl(epfd, EPOLL_CTL_MOD, sd, &ev) == -1) {
-                    log(err, "elentLoop, epoll_ctl, mod: {}", strerror(errno));
+                    log(err, "epollCallback, epoll_ctl, rearm, MOD: {}", strerror(errno));
                 }
 
                 break;
@@ -31,7 +31,7 @@ eeskorka::epollLoop::epollLoop() : epfd(0), sd(0) {
             case waitUntillReaded: {
                 ev.events = EPOLLOUT | EPOLLET | EPOLLONESHOT;
                 if (epoll_ctl(epfd, EPOLL_CTL_MOD, sd, &ev) == -1) {
-                    log(err, "elentLoop, epoll_ctl, mod: {}", strerror(errno));
+                    log(err, "epollCallback, epoll_ctl, wait, mod: {}", strerror(errno));
                 }
 
                 break;
@@ -57,12 +57,17 @@ void eeskorka::epollLoop::setClientCallback(clientCallbackType callback) {
 int eeskorka::epollLoop::init(int sd_list) {
     sd = sd_list;
 
-    epfd = epoll_create(config.maxClients);
+    epfd = epoll_create(config.maxClients * config.workers);
     if (epfd == -1) {
-        log(critical, EPOLL_CREATE_ERR);
+        log(critical, "failed to create epoll descriptor");
         return -1;
     }
     log(info, "create epoll, epfd {}", epfd);
+
+    log(info, "config");
+    log(info, "maxClients {}", config.maxClients);
+    log(info, "workers {}", config.workers);
+
 
     listenEvent.data.fd = sd;
     listenEvent.events = EPOLLIN | EPOLLEXCLUSIVE;
@@ -70,7 +75,7 @@ int eeskorka::epollLoop::init(int sd_list) {
     // on many connections and starvation when only one thread is processing all connections
 
     if (epoll_ctl(epfd, EPOLL_CTL_ADD, sd, &listenEvent) != 0) {
-        log(critical, "epoll ctl failed");
+        log(critical, "epoll_ctl failed");
         return -1;
     }
     log(info, "bind epoll to the socket");
@@ -104,22 +109,15 @@ int eeskorka::epollLoop::acceptClients() {
             // using Edge Triggered with EPOLLONESHOT to unblock epoll_wait only once;
 
             if (epoll_ctl(epfd, EPOLL_CTL_ADD, cli_sd, &cli_ev) == -1) {
-                log(warn, "accpet, epoll_ctl: {}", strerror(errno));
-            };
-
-            log(info, "new client: sd {}, from {}", cli_sd,
-                       IPAddressToString(client.sin_addr.s_addr));
-
+                log(err, "accept, epoll_ctl: {}", strerror(errno));
+            }
         } else if (cli_sd == -1) {
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                log(debug, "done accept");
+                // done accept
                 break;
             }
 
-            log(critical, "cli_sd == -1 && errno == {}", strerror(errno));
-            return -1;
-        } else {
-            log(debug, "? cli_sd: {}", cli_sd);
+            log(critical, "accept return -1, errno: ", strerror(errno));
             return -1;
         }
     }
@@ -142,16 +140,16 @@ std::function<void()> eeskorka::epollLoop::getEventLoop() {
                     }
                 } else if (events[i].events & (EPOLLIN)) {
                     if (clientCallback(events[i].data.fd, epollCallback) != 0) {
-                        log(critical, "failure on serving clients");
+                        log(critical, "failure on serving client {}", events[i].data.fd);
                         goto failure;
                     }
                 } else if (events[i].events & (EPOLLOUT)) {
-                    log(info, "epollout");
-
                     if (clientCallback(events[i].data.fd, epollCallback) != 0) {
-                        log(critical, "failure on serving clients");
+                        log(critical, "failure on serving reading client {}", events[i].data.fd);
                         goto failure;
                     }
+                } else {
+                    log(warn, "unexpected event");
                 }
             }
         }

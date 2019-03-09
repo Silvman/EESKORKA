@@ -83,11 +83,11 @@ eeskorka::serverConfig eeskorka::utility::readConfig(const std::filesystem::path
 
             if (token == "cpu_limit") {
                 ++i;
-                config.numCores = std::atoi((*i).str().c_str());
+                config.workers = std::atoi((*i).str().c_str());
 
-                if (config.numCores < 1) {
+                if (config.workers < 1) {
                     throw std::runtime_error(
-                            fmt::format("config parse failed: cpu_limit == {} (must be at least 1)", config.numCores));
+                            fmt::format("config parse failed: cpu_limit == {} (must be at least 1)", config.workers));
                 }
 
                 break;
@@ -97,10 +97,10 @@ eeskorka::serverConfig eeskorka::utility::readConfig(const std::filesystem::path
                 ++i;
                 config.numThreads = std::atoi((*i).str().c_str());
 
-                if (config.numCores < 1) {
+                if (config.workers < 1) {
                     throw std::runtime_error(
                             fmt::format("config parse failed: thread_limit == {} (must be at least 1)",
-                                        config.numCores));
+                                        config.workers));
                 }
 
                 break;
@@ -147,12 +147,12 @@ eeskorka::serverConfig eeskorka::utility::readConfig(const std::filesystem::path
                 ++i;
                 config.maxClients = std::atoi((*i).str().c_str());
 
-                if (config.maxClients < config.numCores) {
+                if (config.maxClients < config.workers) {
                     throw std::runtime_error(
                             fmt::format(
                                     "config parse failed: max_clients ({}) must be greather "
                                     "or equeal to max_cores ({})",
-                                    config.maxClients, config.numCores));
+                                    config.maxClients, config.workers));
                 }
             }
         }

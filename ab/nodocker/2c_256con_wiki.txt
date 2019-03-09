@@ -1,0 +1,42 @@
+This is ApacheBench, Version 2.3 <$Revision: 1843412 $>
+Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+Licensed to The Apache Software Foundation, http://www.apache.org/
+
+Benchmarking localhost (be patient)
+
+
+Server Software:        EESKORKA
+Server Hostname:        localhost
+Server Port:            8080
+
+Document Path:          /httptest/wikipedia_russia.html
+Document Length:        954824 bytes
+
+Concurrency Level:      1000
+Time taken for tests:   20.273 seconds
+Complete requests:      30000
+Failed requests:        0
+Total transferred:      28649160000 bytes
+HTML transferred:       28644720000 bytes
+Requests per second:    1479.78 [#/sec] (mean)
+Time per request:       675.778 [ms] (mean)
+Time per request:       0.676 [ms] (mean, across all concurrent requests)
+Transfer rate:          1380023.98 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:        0   24 116.0     11    1041
+Processing:     1  648  95.2    657    1235
+Waiting:        0   15  10.4     13     105
+Total:          2  672 180.1    668    2265
+
+Percentage of the requests served within a certain time (ms)
+  50%    668
+  66%    673
+  75%    676
+  80%    677
+  90%    683
+  95%    691
+  98%    972
+  99%   2018
+ 100%   2265 (longest request)

@@ -16,6 +16,19 @@
 namespace eeskorka {
     namespace fs = std::filesystem;
 
+    enum class IOStatus {
+        wouldBlock = -2,
+        error = -1,
+        success = 0,
+    };
+
+    enum class TaskType {
+        no = 0,
+        writeFile = 1,
+        writeData,
+        read,
+    };
+
     class HTTPContext {
     public:
         explicit HTTPContext(int sd = -1);
@@ -24,23 +37,29 @@ namespace eeskorka {
         HTTPRequest request;
         HTTPResponse response;
 
-        int writeHeader();
-        int writeFile(const fs::path &p);
-        int writeBody(const char *buffer, size_t size);
+        void writeHeader();
+        void attachFile(const fs::path &p);
+
+        void writeFile();
 
         bool hasUnfinishedTask();
-        void resumeTask();;
+        void resumeTask();
+        int sd;
 
     private:
-        int unfinishedTask;
-        int sd;
-        int writeCompletely(const char *buffer, size_t size);
+        TaskType unfinishedTask {TaskType::no};
+        IOStatus writeCompletely(const char *buffer, size_t size);
 
         ssize_t written {0}, nn {0};
         uintmax_t sizeLeft {0};
+
+        bool headerDone {false};
+        bool bodyDone {false};
+
         std::filesystem::path p;
+
         char *buffer;
-        std::ifstream fReader;
+        int fd;
     };
 }
 

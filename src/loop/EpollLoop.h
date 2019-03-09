@@ -15,9 +15,6 @@
 #define loop for(;;)
 
 namespace eeskorka {
-    const char EPOLL_CREATE_ERR[] = "Failed to create epoll file descriptor\n";
-    const char EPOLL_CLOSE_ERR[] = "Failed to close epoll file descriptor\n";
-
     class epollLoop {
     public:
         explicit epollLoop();

@@ -12,7 +12,7 @@ ADD . /opt/$PROJECT_NAME/
 
 RUN mkdir build &&\
     cd build &&\
-    cmake -DCMAKE_BUILD_TYPE=Debug .. &&\
+    cmake -DCMAKE_BUILD_TYPE=Release .. &&\
     make
 
 EXPOSE 80

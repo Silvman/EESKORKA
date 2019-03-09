@@ -9,7 +9,8 @@ int eeskorka::serverConfig::readConfigFile(const std::filesystem::path &p) {
     try {
         *this = eeskorka::utility::readConfig(p);
     } catch (const std::exception &e) {
-        eeskorka::log(critical, e.what());
+        eeskorka::log(err, e.what());
+        eeskorka::log(warn, "using default config");
         return 1;
     }
 

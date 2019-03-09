@@ -9,6 +9,8 @@
 
 namespace eeskorka {
     void handleStatic(HTTPContext& ctx);
+    void handleStaticRedirect(eeskorka::HTTPContext &ctx, const std::string& decodedURL);
+    void handleStaticExists(eeskorka::HTTPContext &ctx, const fs::path& p);
 }
 
 #endif //EESKORKA_STATICHANDLER_H

@@ -17,21 +17,6 @@
 #include <netinet/in.h>
 
 namespace eeskorka {
-
-    /**
-     * сервер принимает конфиг в виде объекта
-     *
-     * задача:
-     * создать сокет
-     * забиндить
-     * слушать
-     * запустить эвент луп
-     *
-     */
-
-    const char SOCK_CREATE_ERR[] = "Failed to create socket descriptor\n";
-    const char SOCK_CLOSE_ERR[] = "Failed to close socket descriptor\n";
-
     class server {
     private:
         std::vector<std::thread> loops;

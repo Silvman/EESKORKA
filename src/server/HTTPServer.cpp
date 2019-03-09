@@ -20,19 +20,20 @@ int eeskorka::httpServer::startStaticServer() {
 }
 
 int eeskorka::httpServer::onClientReady(int sd, loopCallbackType &loopCallback) {
-    if (clients.find(sd) != clients.end()) {
-        auto& httpContext = *(clients[sd]);
-        httpContext.resumeTask();
+    std::shared_ptr<HTTPContext> ptr;
+    mtx.lock();
+    if (clients.find(sd) == clients.end()) {
+        clients[sd] = std::make_shared<HTTPContext>(sd);
+    }
+    ptr = clients[sd];
+    mtx.unlock();
 
-    } else {
-        clients.emplace(sd, std::make_shared<HTTPContext>(sd));
-        auto& httpContext = *(clients[sd]);
+    auto &httpContext = *(ptr);
 
+    if (!httpContext.hasUnfinishedTask()) {
         std::string rawMessage;
         if (readFromSocket(sd, rawMessage) == 0) {
             if (isHeaderOver(rawMessage)) {
-                eeskorka::log(info, "header is read");
-
                 httpContext.request.parseRawHeader(rawMessage);
                 httpContext.response.statusLine.http_version = httpContext.request.requestLine.http_version;
 
@@ -42,20 +43,21 @@ int eeskorka::httpServer::onClientReady(int sd, loopCallbackType &loopCallback) 
                     log(err, e.what());
                 }
 
-                if (!httpContext.hasUnfinishedTask()) {
-                    clients.erase(sd);
-                    loopCallback(sd, closeConnection);
-                } else {
-                    loopCallback(sd, waitUntillReaded);
-                }
-
-                return 0;
-            } else {
-                log(warn, "header is broken");
+                httpContext.writeHeader();
+                httpContext.writeFile();
             }
         }
+    } else {
+        httpContext.resumeTask();
+    }
 
-        return 0;
+    if (!httpContext.hasUnfinishedTask()) {
+        mtx.lock();
+        clients.erase(sd);
+        mtx.unlock();
+        loopCallback(sd, closeConnection);
+    } else {
+        loopCallback(sd, waitUntillReaded);
     }
 
     return 0;
@@ -66,7 +68,6 @@ int eeskorka::httpServer::readFromSocket(int sd, std::string &raw) {
 
     loop {
         ssize_t n = read(sd, buffer, config.bufferSize);
-        log(debug, "n: {}", n);
 
         if (n > 0) {
             raw.append(buffer, n);
@@ -74,18 +75,22 @@ int eeskorka::httpServer::readFromSocket(int sd, std::string &raw) {
             if (n == -1) {
                 // прочитали сообщение
                 if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                    log(debug, "read message, errno eagain");
                     break;
                 } else {
-                    log(critical, "read message, errno: {}", strerror(errno));
                     return -1;
                 }
             } else {
-                log(debug, "n=0, disconnect");
                 return 0;
             }
         }
     };
 
     return 0;
+}
+
+eeskorka::httpServer::httpServer() {
+    clients.reserve(static_cast<unsigned long>(config.maxClients * config.workers / clients.max_load_factor()));
+}
+
+eeskorka::httpServer::~httpServer() {
 }

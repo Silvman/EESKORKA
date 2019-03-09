@@ -1,6 +1,8 @@
 #include "server/HTTPServer.h"
 #include "RuntimeArguments.h"
 
+eeskorka::serverConfig eeskorka::config;
+
 int main(int argc, char** argv) {
     RuntimeArguments arguments(argc, argv);
 

@@ -22,6 +22,7 @@ namespace eeskorka {
     public:
         template<typename... Args, typename T>
         void operator()(logLevel l, T str, const Args &... args) {
+#ifndef NOLOG
             switch (l) {
                 case info: {
                     console->info(str, args...);
@@ -48,6 +49,7 @@ namespace eeskorka {
                     break;
                 }
             }
+#endif
         }
 
         static ServerLogger &get() {
@@ -60,15 +62,20 @@ namespace eeskorka {
 
     private:
         ServerLogger() {
+#ifndef NOLOG
             auto sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
             spdlog::init_thread_pool(8192, 1);
             console = std::make_shared<spdlog::async_logger>("as", sink, spdlog::thread_pool(), spdlog::async_overflow_policy::block);
 
-            console->set_pattern("[%H:%M:%S %z] [%^%l%$] [thread %t] %v");
+            console->set_pattern("[%H:%M:%f %z] [%^%l%$] [thread %t] %v");
             console->set_level(spdlog::level::debug);
+#endif
         }
 
+#ifndef NOLOG
         std::shared_ptr<spdlog::logger> console;
+#endif
+
     };
 
     static ServerLogger& log = ServerLogger::get();
