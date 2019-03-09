@@ -6,6 +6,7 @@
 #define EESKORKA_TYPES_H
 
 #include <functional>
+#include "http/HTTPContext.h"
 
 enum connectionAction {
     rearmConnection = 100,
@@ -13,7 +14,7 @@ enum connectionAction {
     waitUntillReaded,
 };
 
-typedef std::function<void(int, connectionAction)> loopCallbackType;
-typedef std::function<int(int, loopCallbackType &)> clientCallbackType;
+typedef std::function<void(eeskorka::HTTPContext*, connectionAction)> loopCallbackType;
+typedef std::function<int(eeskorka::HTTPContext*, loopCallbackType &)> clientCallbackType;
 
 #endif //EESKORKA_TYPES_H

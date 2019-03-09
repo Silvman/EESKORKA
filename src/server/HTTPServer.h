@@ -38,7 +38,7 @@ namespace eeskorka {
         virtual ~httpServer();
 
         int startStaticServer();
-        int onClientReady(int sd, loopCallbackType& loopCallback);
+        int onClientReady(HTTPContext* ptr, loopCallbackType& loopCallback);
 
     };
 

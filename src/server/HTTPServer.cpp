@@ -19,20 +19,12 @@ int eeskorka::httpServer::startStaticServer() {
     return err;
 }
 
-int eeskorka::httpServer::onClientReady(int sd, loopCallbackType &loopCallback) {
-    std::shared_ptr<HTTPContext> ptr;
-    mtx.lock();
-    if (clients.find(sd) == clients.end()) {
-        clients[sd] = std::make_shared<HTTPContext>(sd);
-    }
-    ptr = clients[sd];
-    mtx.unlock();
-
+int eeskorka::httpServer::onClientReady(HTTPContext* ptr, loopCallbackType &loopCallback) {
     auto &httpContext = *(ptr);
 
     if (!httpContext.hasUnfinishedTask()) {
         std::string rawMessage;
-        if (readFromSocket(sd, rawMessage) == 0) {
+        if (readFromSocket(httpContext.sd, rawMessage) == 0) {
             if (isHeaderOver(rawMessage)) {
                 httpContext.request.parseRawHeader(rawMessage);
                 httpContext.response.statusLine.http_version = httpContext.request.requestLine.http_version;
@@ -52,12 +44,9 @@ int eeskorka::httpServer::onClientReady(int sd, loopCallbackType &loopCallback) 
     }
 
     if (!httpContext.hasUnfinishedTask()) {
-        mtx.lock();
-        clients.erase(sd);
-        mtx.unlock();
-        loopCallback(sd, closeConnection);
+        loopCallback(ptr, closeConnection);
     } else {
-        loopCallback(sd, waitUntillReaded);
+        loopCallback(ptr, waitUntillReaded);
     }
 
     return 0;

@@ -3,25 +3,27 @@
 //
 
 #include "EpollLoop.h"
+#include "../http/HTTPContext.h"
 
 eeskorka::epollLoop::epollLoop() : epfd(0), sd(0) {
-    epollCallback = [&](int sd, connectionAction action) {
+    epollCallback = [&](HTTPContext* ptr, connectionAction action) {
         epoll_event ev{};
-        ev.data.fd = sd;
+        ev.data.ptr = ptr;
 
         switch (action) {
             case closeConnection: {
-                if (epoll_ctl(epfd, EPOLL_CTL_DEL, sd, &ev) == -1) {
+                if (epoll_ctl(epfd, EPOLL_CTL_DEL, ptr->sd, &ev) == -1) {
                     log(err, "epollCallback, epoll_ctl, close,  DEL: {}", strerror(errno));
                 }
-                close(sd);
 
+                close(ptr->sd);
+                delete ptr;
                 break;
             }
 
             case rearmConnection: {
                 ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
-                if (epoll_ctl(epfd, EPOLL_CTL_MOD, sd, &ev) == -1) {
+                if (epoll_ctl(epfd, EPOLL_CTL_MOD, ptr->sd, &ev) == -1) {
                     log(err, "epollCallback, epoll_ctl, rearm, MOD: {}", strerror(errno));
                 }
 
@@ -30,7 +32,7 @@ eeskorka::epollLoop::epollLoop() : epfd(0), sd(0) {
 
             case waitUntillReaded: {
                 ev.events = EPOLLOUT | EPOLLET | EPOLLONESHOT;
-                if (epoll_ctl(epfd, EPOLL_CTL_MOD, sd, &ev) == -1) {
+                if (epoll_ctl(epfd, EPOLL_CTL_MOD, ptr->sd, &ev) == -1) {
                     log(err, "epollCallback, epoll_ctl, wait, mod: {}", strerror(errno));
                 }
 
@@ -104,7 +106,7 @@ int eeskorka::epollLoop::acceptClients() {
             }
 
             epoll_event cli_ev{};
-            cli_ev.data.fd = cli_sd;
+            cli_ev.data.ptr = new eeskorka::HTTPContext(cli_sd);
             cli_ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
             // using Edge Triggered with EPOLLONESHOT to unblock epoll_wait only once;
 
@@ -131,6 +133,9 @@ std::function<void()> eeskorka::epollLoop::getEventLoop() {
 
         loop {
             int numEvents = epoll_wait(epfd, events, config.maxClients, -1);
+            if (numEvents == -1) {
+                log(critical, "epoll_wait failed, error: ", strerror(errno));
+            }
 
             for (int i = 0; i < numEvents; i++) {
                 if (events[i].data.fd == sd) {
@@ -139,12 +144,12 @@ std::function<void()> eeskorka::epollLoop::getEventLoop() {
                         goto failure;
                     }
                 } else if (events[i].events & (EPOLLIN)) {
-                    if (clientCallback(events[i].data.fd, epollCallback) != 0) {
+                    if (clientCallback(reinterpret_cast<HTTPContext *>(events[i].data.ptr), epollCallback) != 0) {
                         log(critical, "failure on serving client {}", events[i].data.fd);
                         goto failure;
                     }
                 } else if (events[i].events & (EPOLLOUT)) {
-                    if (clientCallback(events[i].data.fd, epollCallback) != 0) {
+                    if (clientCallback(reinterpret_cast<HTTPContext *>(events[i].data.ptr), epollCallback) != 0) {
                         log(critical, "failure on serving reading client {}", events[i].data.fd);
                         goto failure;
                     }

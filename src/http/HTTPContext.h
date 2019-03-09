@@ -9,7 +9,6 @@
 #include "../http/HTTPResponse.h"
 #include "../logger/ServerLogger.h"
 #include "../server/ServerConfig.h"
-#include "../types.h"
 #include <filesystem>
 #include <fstream>
 
